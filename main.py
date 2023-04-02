@@ -113,3 +113,18 @@ for I in range(8, 13):
     plt.xlabel('t')
     plt.ylabel('membrane Voltage (mV)')
     plt.show()
+    
+    # Print out the equilibrium points
+for I in range(8, 13):
+    # assigning sym variables :
+    V1, n1, m1, h1 = symbols('V1 n1 m1 h1')
+
+    # equilibrium points :
+    eq1 = ((I-gK*n1**4*(V1 - vK) - gNa*m1**3*h1*(V1-vNa)-gL*(V1-vL))/C)
+    eq2 = an(V1)*(1-n1) - bn(V1)*n1
+    eq3 = am(V1)*(1-m1) - bm(V1)*m1
+    eq4 = ah(V1)*(1-h1) - bh(V1)*h1
+
+    equi = solve((eq1, eq2, eq3, eq4), (V1, n1, m1, h1))
+    print(f'Equilibrium point at I = {I} μA/cm^2: V = {equi[0][0]:.3f} mV, n = {equi[0][1]:.3f}, m = {equi[0][2]:.3f}, h = {equi[0][3]:.3f}')
+
