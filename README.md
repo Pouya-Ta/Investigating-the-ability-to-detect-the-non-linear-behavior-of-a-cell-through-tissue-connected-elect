@@ -1,104 +1,172 @@
-# Investigating the Ability to Detect Non-Linear Behavior of a Cell through Tissue-Connected Electrodes
+# Simulation of Neuronal Behavior Using Hodgkin-Huxley Model
 
-`main.py` is a Python script designed to investigate the non-linear behavior of a cell by simulating the Hodgkin-Huxley (HH) model of a neuron. The script explores the effects of various parameters on membrane potential and the gating variables of potassium (K) and sodium (Na) channels. It also calculates equilibrium points of the HH model for different current injection values.
+This repository contains both Python (`main.py`) and MATLAB scripts for simulating the non-linear behavior of a neuron based on the Hodgkin-Huxley (HH) model. The scripts explore the dynamics of membrane potential and the conductances of potassium (K) and sodium (Na) channels under various conditions, such as applied current and voltage clamping.
 
 ## Features
 
-- **Hodgkin-Huxley Model Simulation**: Implements the HH model to simulate the neuron's behavior under different conditions.
-- **Parameter Variation**: Allows for the variation of injected current and leakage voltage to observe their effects on membrane potential and gating probabilities.
-- **Equilibrium Points Calculation**: Computes the equilibrium points of the HH model for different current injection values.
-- **Visualization**: Provides plots of membrane potential and gating probabilities over time for various conditions.
+- **Hodgkin-Huxley Model Simulation**: Implements the HH model to simulate the dynamics of a neuron, focusing on the conductances of Na and K channels and their impact on membrane potential.
+- **Voltage-Clamp Experiments**: Simulates voltage-clamp experiments to observe how potassium and sodium conductances evolve over time for a given membrane potential.
+- **Action Potential Generation**: Models the generation of action potentials by applying an external current to the neuron and visualizing the resulting membrane potential and channel conductances.
+- **Visualization**: Provides detailed plots of membrane potential, sodium and potassium conductances, and gating variables over time.
 
-## How It Works
+## MATLAB Code Overview
 
-1. **Initialization**: The script initializes constants related to the HH model, such as conductances, reversal potentials, membrane capacitance, and temperature coefficient.
-2. **Rate Functions**: Defines the opening (alpha) and closing (beta) rate functions for the K and Na channels.
-3. **Simulation**: 
-   - Simulates the HH model for a range of injected current values, plotting the membrane potential and gating probabilities over time.
-   - Examines the effect of varying leakage voltage on membrane potential.
-   - Calculates and plots equilibrium points for different current injection values.
-4. **Visualization**: Uses `matplotlib` to generate plots that illustrate the neuron's response under various conditions.
+### Usage
 
-## Usage
+1. **Run the MATLAB script**:
+   - Open the MATLAB script (`voltage_clamp_HH.m`) in MATLAB.
+   - Execute the script by pressing the "Run" button or typing `run('voltage_clamp_HH.m')` in the command window.
+   
+2. **Output**:
+   - The output plots will provide insights into the dynamics of membrane potential, potassium and sodium conductances, and gating variables.
 
-1. Ensure you have the required libraries installed:
-    ```bash
-    pip install numpy matplotlib scipy sympy
-    ```
-2. Run the script:
-    ```bash
-    python main.py
-    ```
-3. Follow the output plots to analyze the neuron's behavior under different conditions.
+### Example Outputs
 
-## Example Output
+- **Voltage-Clamp Simulation**:
+  - **Potassium Conductance**:
+    ![MATLAB Potassium Conductance](matlab_potassium_conductance.png)
+  - **Sodium Conductance**:
+    ![MATLAB Sodium Conductance](matlab_sodium_conductance.png)
 
-### Membrane Potential and Gating Probabilities
-For each current injection value, the script generates two plots:
-- **Membrane potential vs. time**
-- **Gating probabilities (n, m, h) vs. time**
+- **Action Potential Simulation**:
+  - **Membrane Potential**:
+    ![MATLAB Action Potential](matlab_action_potential.png)
+  - **Sodium and Potassium Conductances**:
+    ![MATLAB Conductances](matlab_conductances.png)
 
-![Example Output](example_output.png)
+### Code Overview
 
-### Effect of Varying Leakage Voltage
-The script also generates a plot showing the effect of different leakage voltage values on membrane potential.
+#### Constants and Parameters
 
-![Leakage Voltage Effect](leakage_voltage_effect.png)
+```matlab
+% Constants and parameters initialization
+gK = 36;    % Potassium conductance (mS/cm^2)
+gNa = 120;  % Sodium conductance (mS/cm^2)
+gL = 0.3;   % Leak conductance (mS/cm^2)
+vK = -12;   % Potassium reversal potential (mV)
+vNa = 115;  % Sodium reversal potential (mV)
+vL = 10.6;  % Leak reversal potential (mV)
+C_m = 1e-6; % Membrane capacitance (F)
+```
 
-### Equilibrium Points
-Equilibrium points for the HH model are computed and printed for a range of current injection values, with corresponding plots showing membrane potential over time.
+#### Differential Equations
 
-![Equilibrium Points](equilibrium_points.png)
+```matlab
+function dXdt = dXdT_HH(t, X, I_app)
+    v = X(1); m = X(2); n = X(3); h = X(4);
+    % Differential equations governing the system
+    ...
+    dXdt = [dv_dt; dm_dt; dn_dt; dh_dt];
+end
+```
 
-## Code Overview
+#### Simulation and Visualization
 
-### Constants and Parameters
+```matlab
+[t, X] = ode15s(@(t, X) dXdT_HH(t, X, I_app), [0, 30], [0, 0, 0, 0]);
+figure;
+plot(t, X(:, 1), 'k-', 'LineWidth', 1.5);
+xlabel('t (ms)');
+ylabel('v (mV)');
+title('Membrane Potential Over Time');
+```
+
+## Python Code Overview
+
+### Usage
+
+1. **Ensure the required Python libraries are installed**:
+
+   ```bash
+   pip install numpy matplotlib scipy
+   ```
+
+2. **Run the script**:
+
+   ```bash
+   python main.py
+   ```
+
+3. **Output**:
+   - The output plots will provide insights into the dynamics of membrane potential, potassium and sodium conductances, and gating variables.
+
+### Example Outputs
+
+- **Voltage-Clamp Simulation**:
+  - **Potassium Conductance**:
+    ![Python Potassium Conductance](python_potassium_conductance.png)
+  - **Sodium Conductance**:
+    ![Python Sodium Conductance](python_sodium_conductance.png)
+
+- **Action Potential Simulation**:
+  - **Membrane Potential**:
+    ![Python Action Potential](python_action_potential.png)
+  - **Sodium and Potassium Conductances**:
+    ![Python Conductances](python_conductances.png)
+
+### Code Overview
+
+#### Constants and Parameters
+
 ```python
 # Constants and parameters initialization
-gK = 36  # unit: mS/cm^2
-vK = -72  # unit: mV
-gNa = 120  # unit: mS/cm^2
-vNa = 55  # unit: mV
-gL = 0.3  # unit: mS/cm^2
-vL = -49.4  # unit: mV
-C = 1  # unit: muF/cm^2
-phi = 1
-Q = 3  # Temperature coefficient-unitless
+gK = 36    # Potassium conductance (mS/cm^2)
+gNa = 120  # Sodium conductance (mS/cm^2)
+gL = 0.3   # Leak conductance (mS/cm^2)
+vK = -12   # Potassium reversal potential (mV)
+vNa = 115  # Sodium reversal potential (mV)
+vL = 10.6  # Leak reversal potential (mV)
+C_m = 1e-6 # Membrane capacitance (F)
 ```
 
-### Rate Functions
+#### Differential Equations
+
 ```python
-# Rate functions for K and Na channels
-an = lambda V: (-0.01*(V+50))/(np.exp(-(V+50)/10)-1)
-bn = lambda V: 0.125*np.exp(-(V+60)/80)
-am = lambda V: (-0.1*(V+35))/(np.exp(-(V+35)/10)-1)
-bm = lambda V: 4*np.exp(-(V+60)/18)
-ah = lambda V: 0.07*np.exp(-(V+60)/20)
-bh = lambda V: 1/(np.exp(-(V+30)/10)+1)
+def dXdT_HH(t, x, I_app):
+    v, m, n, h = x
+    # Differential equations governing the system
+    ...
+    return [dv_dt, dm_dt, dn_dt, dh_dt]
 ```
 
-### Simulation and Visualization
+#### Simulation and Visualization
+
 ```python
-# Simulation and plotting for various current injection values
-for I in range(0, 11, 1):
-    def func(p, t):
-        return [(1/C)*(I-(gK*p[1]**4*(p[0] - vK)) - (gNa*p[2]**3*p[3]*(p[0]-vNa))-(gL*(p[0]-vL))),
-                (an(p[0])*(1-p[1])) - (bn(p[0])*p[1]),
-                (am(p[0])*(1-p[2])) - (bm(p[0])*p[2]),
-                (ah(p[0])*(1-p[3])) - (bh(p[0])*p[3])]
-    Parameters = odeint(func, y0=[-60, 0.317, 0.0529, 0.596], t=tspan)
-    plt.figure()
-    plt.plot(tspan, Parameters[:,0], color='red')
-    plt.xlabel('time')
-    plt.ylabel('membrane Voltage (mV)')
-    plt.title(f'Membrane potential/time, I = {I} μA/cm^2')
-    plt.show()
-    plt.figure()
-    plt.plot(tspan, Parameters[:,1], label='n')
-    plt.plot(tspan, Parameters[:,2], label='m')
-    plt.plot(tspan, Parameters[:,3], label='h')
-    plt.legend()
-    plt.xlabel('t')
-    plt.title(f'n, m & h/t, I = {I} μA/cm^2')
-    plt.show()
+sol = solve_ivp(lambda t, x: dXdT_HH(t, x, I_app)[0], [0, 30], [0, 0, 0, 0], method='BDF')
+plt.plot(t, x[:, 0], 'k-', linewidth=1.5)
+plt.xlabel('t (ms)')
+plt.ylabel('v (mV)')
+plt.title('Membrane Potential Over Time')
+plt.show()
 ```
+
+## Comparison: MATLAB vs. Python
+
+### Pros of MATLAB
+
+1. **Ease of Use**: MATLAB is designed for mathematical and engineering computations, offering built-in functions for numerical integration (`ode23s`, `ode15s`) that are simple to use with minimal setup.
+2. **Performance**: MATLAB’s numerical solvers are highly optimized for handling stiff ODEs, making it particularly efficient for solving complex biological models like Hodgkin-Huxley.
+3. **Visualization**: MATLAB has powerful plotting tools that are highly customizable and widely used in scientific research, which is beneficial for creating publication-quality figures.
+
+### Cons of MATLAB
+
+1. **Cost**: MATLAB is a proprietary software, requiring a paid license, which can be a significant barrier for many users, especially in academia or small research groups.
+2. **Less Flexibility**: While MATLAB is powerful, it is less versatile than Python for general-purpose programming and integrating with other technologies, such as web applications or machine learning frameworks.
+
+### Pros of Python
+
+1. **Open Source**: Python is free and open-source, making it accessible to a wide audience. It is supported by a large community, ensuring continuous improvements and extensive documentation.
+2. **Flexibility**: Python is a general-purpose programming language that can be easily integrated with other technologies and tools, such as machine learning libraries (e.g., TensorFlow, PyTorch) and web frameworks (e.g., Django).
+3. **Extensive Libraries**: Python’s ecosystem includes powerful libraries like `SciPy`, `NumPy`, and `Matplotlib`, which provide robust tools for scientific computing and data visualization.
+
+### Cons of Python
+
+1. **Performance**: Python can be slower than MATLAB for certain numerical computations, especially when dealing with large datasets or complex simulations. However, this can often be mitigated by using optimized libraries or parallel processing.
+2. **Steeper Learning Curve for Scientific Computing**: While Python is a versatile language, setting up scientific computations might require more effort compared to MATLAB, especially for users unfamiliar with Python’s ecosystem.
+
+### Conclusion
+
+- **MATLAB** is ideal for users focused on mathematical modeling and simulations, particularly in engineering and biological sciences, due to its performance and ease of use in these domains.
+- **Python** offers greater flexibility and is more accessible, making it a better choice for those looking to integrate simulations with other programming tasks or who require a free, open-source solution.
+
+For this project, if you need to focus primarily on the simulation and visualization aspects, MATLAB might be more efficient. However, if you plan to extend the project to include machine learning, data analysis, or integration with other tools, Python would be the preferred option.
