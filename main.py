@@ -1,130 +1,171 @@
+# Pouya Taghipour    -----> 9933014
+# Amirhossein Mohebi -----> 9933057
+
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.integrate import odeint
-from sympy import symbols, solve
+from scipy.integrate import solve_ivp
 
-# declaring variables
-global gK, gNa, gL, vK, vNa, vL, phi, C, Q
+# The time-dependent behavior of the potassium conductance can be simulated using a program that integrates the equation for
 
-# assigning values
-gK = 36  # unit: mS/cm^2
-vK = -72  # unit: mV
-gNa = 120  # unit: mS/cm^2
-vNa = 55  # unit: mV
-gL = 0.3  # unit: mS/cm^2
-vL = -49.4  # unit: mV
-C = 1  # unit: muF/cm^2
-phi = 1
-Q = 3  # Temperature coefficient-unitless ; phi = Q^((T-6.3)/10) ; here T is taken as 6.3.
+f = 5  # Hz
+t = np.arange(0, 1/f * 1e+3 + 1)  # ms
+E_field = 1  # v/m
+v = 10  # mv
 
-tspan = np.array([0, 100])
+# Function for the first ODE system
+def dXdT_n(t, n, v):
+    a_n = 0.01 * (10 - v) / (np.exp((10 - v) / 10) - 1)
+    b_n = 0.125 * np.exp(-v / 80)
+    dn_dt = a_n * (1 - n) - b_n * n
+    return [dn_dt]
 
-# Defining opening rate(alpha) and closing rate(beta) of K channel(n), Na channel(m,h) :
+# Voltage-clamp simulation for potassium current
+v = 10
+xo = 0
+g_K = 10
+sol = solve_ivp(dXdT_n, [0, 12], [xo], args=(v,), method='BDF')
+t = sol.t
+x = sol.y.T
+g = g_K * (x[:, 0] ** 4)
 
-an = lambda V: (-0.01*(V+50))/(np.exp(-(V+50)/10)-1)
-bn = lambda V: 0.125*np.exp(-(V+60)/80)
+plt.figure()
+plt.plot(t, g)
+plt.xlabel('t (ms)')
+plt.ylabel('g_{K}')
+plt.gca().tick_params(axis='both', labelsize=16)
 
-am = lambda V: (-0.1*(V+35))/(np.exp(-(V+35)/10)-1)
-bm = lambda V: 4*np.exp(-(V+60)/18)
+# Data for v=10 mV
+data2 = np.array([
+    [0.1640, 0.3330, 0.5860, 0.7540, 1.1100, 1.4900, 2.0000, 2.8400, 4.1900, 6.3800, 8.8000, 11.2000],
+    [0.2500, 0.2600, 0.2600, 0.3100, 0.3100, 0.3200, 0.4000, 0.5000, 0.7100, 1.0000, 1.3000, 1.6000]
+])
 
-ah = lambda V: 0.07*np.exp(-(V+60)/20)
-bh = lambda V: 1/(np.exp(-(V+30)/10)+1)
+v = 10.001
+xo = 0.28
+sol = solve_ivp(dXdT_n, [0, 12], [xo], args=(v,), method='BDF')
+t = sol.t
+x = sol.y.T
+g = g_K * (x[:, 0] ** 4)
 
-# Plots of gating Probabilities and membrane potential with various current injection value :
+plt.figure()
+plt.plot(t, g, 'k-', linewidth=1.5)
+plt.plot(data2[0, :], data2[1, :], 'ko', linewidth=1.5, markerfacecolor=[1, 1, 1], markersize=5)
+plt.gca().tick_params(axis='both', which='both', labelsize=9, bottom=False, left=False)
+plt.box(False)
+plt.axis([0, 12, 0, 2.4])
+plt.text(12.2, 0.45*2.4, '$v = 10$~mV', fontsize=10)
 
-for I in range(0, 11, 1):
-    # defining hh model equation :
+# Function for the second ODE system
+def dXdT_mh(t, x, v):
+    m, h = x
+    a_m = 0.1 * (25 - v) / (np.exp((25 - v) / 10) - 1)
+    b_m = 4 * np.exp(-v / 18)
+    a_h = 0.07 * np.exp(-v / 20)
+    b_h = 1 / (np.exp((30 - v) / 10) + 1)
+    dm_dt = a_m * (1 - m) - b_m * m
+    dh_dt = a_h * (1 - h) - b_h * h
+    return [dm_dt, dh_dt]
 
-    def func(p, t):
-        return [(1/C)*(I-(gK*p[1]**4*(p[0] - vK)) - (gNa*p[2]**3*p[3]*(p[0]-vNa))-(gL*(p[0]-vL))),
-                (an(p[0])*(1-p[1])) - (bn(p[0])*p[1]),
-                (am(p[0])*(1-p[2])) - (bm(p[0])*p[2]),
-                (ah(p[0])*(1-p[3])) - (bh(p[0])*p[3])]
+# Voltage-clamp simulation for sodium current
+v = 10
+xo = [0, 1]
+g_Na = 10
+sol = solve_ivp(dXdT_mh, [0, 12], xo, args=(v,), method='BDF')
+t = sol.t
+x = sol.y.T
+g = g_Na * (x[:, 0] ** 3) * x[:, 1]
 
-    Parameters = odeint(func, y0=[-60, 0.317, 0.0529, 0.596], t=tspan)
+plt.figure()
+plt.plot(t, g)
+plt.xlabel('t (ms)')
+plt.ylabel('g_{Na}')
+plt.gca().tick_params(axis='both', labelsize=16)
+
+# Data for v=10 mV
+data2 = np.array([
+    [0.1490, 0.3400, 0.5100, 0.7010, 1.1000, 1.4900, 1.9700, 2.8000, 4.1600, 6.4100, 8.7700, 11.3000],
+    [0.0400, 0.0900, 0.1100, 0.1200, 0.1200, 0.1200, 0.1100, 0.1100, 0.1000, 0.0900, 0.0800, 0.0800]
+])
+
+v = 10.0
+xo = [0.05, 0.7]
+sol = solve_ivp(dXdT_mh, [0, 12], xo, args=(v,), method='BDF')
+t = sol.t
+x = sol.y.T
+g = g_Na * (x[:, 0] ** 3) * x[:, 1]
+
+plt.figure()
+plt.plot(t, g, 'k-', linewidth=1.5)
+plt.plot(data2[0, :], data2[1, :], 'ko', linewidth=1.5, markerfacecolor=[1, 1, 1], markersize=5)
+plt.gca().tick_params(axis='both', which='both', labelsize=9, bottom=False, left=False)
+plt.box(False)
+plt.axis([0, 12, 0, 0.15])
+plt.text(12.2, 0.30*0.15, '$v = 10$~mV', fontsize=10)
+
+# Function for the Hodgkin-Huxley model
+def dXdT_HH(t, x, I_app):
+    v, m, n, h = x
+    V_Na = 115
+    V_K = -12
+    V_L = 10.6
+    g_Na = 120
+    g_K = 36
+    g_L = 0.3
+    C_m = 1e-6
     
-    plt.figure()
-    plt.plot(tspan, Parameters[:,0], color='red')
-    plt.xlabel('time')
-    plt.ylabel('membrane Voltage (mV)')
-    plt.title(f'Membrane potential/time, I = {I} μA/cm^2')
-    plt.show()
-
-    plt.figure()
-    plt.plot(tspan, Parameters[:,1], label='n')
-    plt.plot(tspan, Parameters[:,2], label='m')
-    plt.plot(tspan, Parameters[:,3], label='h')
-    plt.legend()
-    plt.xlabel('t')
-    plt.title(f'n, m & h/t, I = {I} μA/cm^2')
-    plt.show()
-
-#Effect of varying Leakage voltage on membrane potential :
-
-vL_values = [-49.2, -49.3, -49.4, -49.45, -49.5]
-for vL in vL_values:
-    I = 0
+    a_m = 0.1 * (25 - v) / (np.exp((25 - v) / 10) - 1)
+    b_m = 4 * np.exp(-v / 18)
+    a_h = 0.07 * np.exp(-v / 20)
+    b_h = 1 / (np.exp((30 - v) / 10) + 1)
+    a_n = 0.01 * (10 - v) / (np.exp((10 - v) / 10) - 1)
+    b_n = 0.125 * np.exp(-v / 80)
     
-    #defining hodgkin-huxley model equation :
-    def func(p, t):
-        return [(1/C)*(I-(gK*p[1]**4*(p[0] - vK)) - (gNa*p[2]**3*p[3]*(p[0]-vNa))-(gL*(p[0]-vL))),
-                (an(p[0])*(1-p[1])) - (bn(p[0])*p[1]),
-                (am(p[0])*(1-p[2])) - (bm(p[0])*p[2]),
-                (ah(p[0])*(1-p[3])) - (bh(p[0])*p[3])]
+    I_Na = (m ** 3) * h * g_Na * (v - V_Na)
+    I_K = (n ** 4) * g_K * (v - V_K)
+    I_L = g_L * (v - V_L)
+    
+    dv_dt = (-I_Na - I_K - I_L + I_app) / C_m
+    dm_dt = a_m * (1 - m) - b_m * m
+    dn_dt = a_n * (1 - n) - b_n * n
+    dh_dt = a_h * (1 - h) - b_h * h
+    
+    g_Na_out = (m ** 3) * h * g_Na
+    g_K_out = (n ** 4) * g_K
+    g_L_out = g_L
+    
+    return [dv_dt, dm_dt, dn_dt, dh_dt], [g_Na_out, g_K_out, g_L_out]
 
-    Parameters = odeint(func, y0=[-60, 0.317, 0.0529, 0.596], t=tspan)
+# Simulation of Hodgkin-Huxley model with applied current
+I_app = 0
+sol = solve_ivp(lambda t, x: dXdT_HH(t, x, I_app)[0], [0, 30], [0, 0, 0, 0], method='BDF')
+xo = sol.y[:, -1]
 
-    plt.plot(tspan, Parameters[:, 0])
-    plt.xlabel('t')
-    plt.ylabel('membrane Voltage (mV)')
-    plt.title('Effect of varying Leakage voltage on membrane potential')
-plt.legend(['El =-49.2 V', 'El=-49.3 V', 'El=-49.4 V', 'El=-49.45 V', 'El=-49.5 V'])
+# Now Adding nonzero applied current:
+I_app = 6.2
+sol = solve_ivp(lambda t, x: dXdT_HH(t, x, I_app)[0], [0, 30], xo, method='BDF')
+t = sol.t
+x = sol.y.T
+
+plt.figure()
+plt.plot(t, x[:, 0], 'k-', linewidth=1.5)
+plt.gca().tick_params(axis='both', labelsize=18)
+plt.box(True)
+plt.axis([0, 30, -20, 120])
+plt.xlabel('$t$ (ms)', fontsize=20)
+plt.ylabel('$v$ (mV)', fontsize=20)
+
+# Obtaining and plotting conductivity values
+G3 = np.array([dXdT_HH(0, xi, I_app)[1] for xi in x])
+
+plt.figure()
+plt.plot(t, G3[:, 0], 'k', linewidth=1.5)
+plt.plot(t, G3[:, 1], 'k--', linewidth=1.5)
+plt.gca().tick_params(axis='both', labelsize=18)
+plt.box(True)
+plt.axis([0, 30, 0, 45])
+plt.xlabel('$t$ (ms)', fontsize=20)
+plt.ylabel('Conductance (mS$\cdot$cm$^{-2}$)', fontsize=20)
+plt.text(16.4, 21, '$g_{Na}$', fontsize=20)
+plt.text(19, 8, '$g_{K}$', fontsize=20)
+
 plt.show()
-
-# Evaluating equilibrium points of HH equation :
-
-for I in range(8, 13):
-    # assigning sym variables :
-    V1, n1, m1, h1 = symbols('V1 n1 m1 h1')
-
-    # equilibrium points :
-    eq1 = ((I-gK*n1**4*(V1 - vK) - gNa*m1**3*h1*(V1-vNa)-gL*(V1-vL))/C)
-    eq2 = an(V1)*(1-n1) - bn(V1)*n1
-    eq3 = am(V1)*(1-m1) - bm(V1)*m1
-    eq4 = ah(V1)*(1-h1) - bh(V1)*h1
-
-    equi = solve((eq1, eq2, eq3, eq4), (V1, n1, m1, h1))
-    equi_v = float(equi[0][0])
-    equi_n = float(equi[0][1])
-    equi_m = float(equi[0][2])
-    equi_h = float(equi[0][3])
-
-    def func(p, t):
-        V, n, m, h = p
-        return [(1/C)*(I - (gK*n**4*(V - vK)) - (gNa*m**3*h*(V-vNa)) - (gL*(V-vL))),
-                (an(V)*(1-n)) - bn(V)*n,
-                (am(V)*(1-m)) - bm(V)*m,
-                (ah(V)*(1-h)) - bh(V)*h]
-
-    Parameters = odeint(func, y0=[equi_v, equi_n, equi_m, equi_h], t=tspan)
-
-    plt.plot(tspan, Parameters[:, 0])
-    plt.title(f'I={I} μA/cm^2')
-    plt.xlabel('t')
-    plt.ylabel('membrane Voltage (mV)')
-    plt.show()
-    
-    # Print out the equilibrium points
-for I in range(8, 13):
-    # assigning sym variables :
-    V1, n1, m1, h1 = symbols('V1 n1 m1 h1')
-
-    # equilibrium points :
-    eq1 = ((I-gK*n1**4*(V1 - vK) - gNa*m1**3*h1*(V1-vNa)-gL*(V1-vL))/C)
-    eq2 = an(V1)*(1-n1) - bn(V1)*n1
-    eq3 = am(V1)*(1-m1) - bm(V1)*m1
-    eq4 = ah(V1)*(1-h1) - bh(V1)*h1
-
-    equi = solve((eq1, eq2, eq3, eq4), (V1, n1, m1, h1))
-    print(f'Equilibrium point at I = {I} μA/cm^2: V = {equi[0][0]:.3f} mV, n = {equi[0][1]:.3f}, m = {equi[0][2]:.3f}, h = {equi[0][3]:.3f}')
-
